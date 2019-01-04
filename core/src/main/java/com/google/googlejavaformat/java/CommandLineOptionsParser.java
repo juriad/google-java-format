@@ -86,6 +86,11 @@ final class CommandLineOptionsParser {
         case "-a":
           optionsBuilder.aosp(true);
           break;
+        case "--ataccama":
+        case "-ataccama":
+        case "-A":
+          optionsBuilder.ataccama(true);
+          break;
         case "--version":
         case "-version":
         case "-v":

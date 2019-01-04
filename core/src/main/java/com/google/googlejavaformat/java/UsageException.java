@@ -14,9 +14,9 @@
 
 package com.google.googlejavaformat.java;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.base.Joiner;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /** Checked exception class for formatter command-line usage errors. */
 final class UsageException extends Exception {
@@ -40,6 +40,8 @@ final class UsageException extends Exception {
     "    File name to use for diagnostics when formatting standard input (default is <stdin>).",
     "  --aosp, -aosp, -a",
     "    Use AOSP style instead of Google Style (4-space indentation).",
+    "  --ataccama, -ataccama, -A",
+    "    Use Ataccama style instead of Google Style (4-space indentation).",
     "  --fix-imports-only",
     "    Fix import order and remove any unused imports, but do no other formatting.",
     "  --skip-sorting-imports",

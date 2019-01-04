@@ -271,7 +271,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
   private final OpsBuilder builder;
 
   private static final Indent.Const ZERO = Indent.Const.ZERO;
-  private final int indentMultiplier;
+  private final JavaFormatterOptions options;
   private final Indent.Const minusTwo;
   private final Indent.Const minusFour;
   private final Indent.Const plusTwo;
@@ -305,13 +305,13 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    *
    * @param builder the {@link OpsBuilder}
    */
-  public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
+  public JavaInputAstVisitor(OpsBuilder builder, JavaFormatterOptions options) {
     this.builder = builder;
-    this.indentMultiplier = indentMultiplier;
-    minusTwo = Indent.Const.make(-2, indentMultiplier);
-    minusFour = Indent.Const.make(-4, indentMultiplier);
-    plusTwo = Indent.Const.make(+2, indentMultiplier);
-    plusFour = Indent.Const.make(+4, indentMultiplier);
+    this.options = options;
+    minusTwo = Indent.Const.make(-2, options.indentationMultiplier());
+    minusFour = Indent.Const.make(-4, options.indentationMultiplier());
+    plusTwo = Indent.Const.make(+2, options.indentationMultiplier());
+    plusFour = Indent.Const.make(+4, options.indentationMultiplier());
   }
 
   /** A record of whether we have visited into an expression. */
@@ -727,8 +727,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token("do");
     visitStatement(
         node.getStatement(),
-        CollapseEmptyOrNot.YES,
-        AllowLeadingBlankLine.YES,
+        CollapseEmptyOrNot.YES, options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
         AllowTrailingBlankLine.YES);
     if (node.getStatement().getKind() == BLOCK) {
       builder.space();
@@ -772,7 +771,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     visitStatement(
         node.getStatement(),
         CollapseEmptyOrNot.YES,
-        AllowLeadingBlankLine.YES,
+        options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
         AllowTrailingBlankLine.NO);
     return null;
   }
@@ -1041,7 +1040,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     visitStatement(
         node.getStatement(),
         CollapseEmptyOrNot.YES,
-        AllowLeadingBlankLine.YES,
+        options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
         AllowTrailingBlankLine.NO);
     return null;
   }
@@ -1087,7 +1086,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       visitStatement(
           statements.get(i),
           CollapseEmptyOrNot.valueOf(onlyClause),
-          AllowLeadingBlankLine.YES,
+          options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
           AllowTrailingBlankLine.valueOf(trailingClauses));
       followingBlock = statements.get(i).getKind() == BLOCK;
       first = false;
@@ -1102,7 +1101,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       visitStatement(
           node.getElseStatement(),
           CollapseEmptyOrNot.NO,
-          AllowLeadingBlankLine.YES,
+          options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
           AllowTrailingBlankLine.NO);
     }
     builder.close();
@@ -1217,7 +1216,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     builder.close();
     builder.space();
     builder.op("->");
-    builder.open(statementBody ? ZERO : plusFour);
+    builder.open(statementBody ? ZERO : (options.indentLambdaStatementAsBlock() ? plusTwo : plusFour));
     if (statementBody) {
       builder.space();
     } else {
@@ -1477,7 +1476,9 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     } else {
       builder.open(plusTwo);
       builder.forcedBreak();
-      builder.blankLineWanted(BlankLineWanted.PRESERVE);
+      if (options.leadingBlankBlock()) {
+        builder.blankLineWanted(BlankLineWanted.PRESERVE);
+      }
       visitStatements(node.getBody().getStatements());
       builder.close();
       builder.forcedBreak();
@@ -1897,7 +1898,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     visitBlock(
         node.getBlock(),
         CollapseEmptyOrNot.valueOf(!trailingClauses),
-        AllowLeadingBlankLine.YES,
+        options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
         AllowTrailingBlankLine.valueOf(trailingClauses));
     for (int i = 0; i < node.getCatches().size(); i++) {
       CatchTree catchClause = node.getCatches().get(i);
@@ -1911,7 +1912,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
       visitBlock(
           node.getFinallyBlock(),
           CollapseEmptyOrNot.NO,
-          AllowLeadingBlankLine.YES,
+          options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
           AllowTrailingBlankLine.NO);
     }
     builder.close();
@@ -2018,7 +2019,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     visitStatement(
         node.getStatement(),
         CollapseEmptyOrNot.YES,
-        AllowLeadingBlankLine.YES,
+        options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
         AllowTrailingBlankLine.NO);
     return null;
   }
@@ -2276,7 +2277,10 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     token(")");
     builder.space();
     visitBlock(
-        node.getBlock(), CollapseEmptyOrNot.NO, AllowLeadingBlankLine.YES, allowTrailingBlankLine);
+        node.getBlock(),
+        CollapseEmptyOrNot.NO,
+        options.leadingBlankBlock() ? AllowLeadingBlankLine.YES : AllowLeadingBlankLine.NO,
+        allowTrailingBlankLine);
   }
 
   /** Formats a union type declaration in a catch clause. */
@@ -2722,7 +2726,7 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
     // don't break after the first element if it is every small, unless the
     // chain starts with another expression
-    int minLength = indentMultiplier * 4;
+    int minLength = options.indentationMultiplier() * 4;
     int length = needDot0 ? minLength : 0;
     for (ExpressionTree e : items) {
       if (needDot) {
@@ -3550,15 +3554,30 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    * @return whether the local can be declared with horizontal annotations
    */
   private Direction canLocalHaveHorizontalAnnotations(ModifiersTree modifiers) {
-    int markerAnnotations = 0;
+    if (!options.nullAnnotations()) {
+      int markerAnnotations = 0;
+      for (AnnotationTree annotation : modifiers.getAnnotations()) {
+        if (annotation.getArguments().isEmpty()) {
+          markerAnnotations++;
+        }
+      }
+      return markerAnnotations <= 1 && markerAnnotations == modifiers.getAnnotations().size()
+          ? Direction.HORIZONTAL
+          : Direction.VERTICAL;
+    } else {
+      return hasOnlyNullRelatedAnnotations(modifiers) ? Direction.HORIZONTAL : Direction.VERTICAL;
+    }
+  }
+
+  private static final Pattern NULL_ANNOTATIONS = Pattern.compile("(?i)^(.*\\.)?(no[tn]null|nullable)$");
+
+  private boolean hasOnlyNullRelatedAnnotations(ModifiersTree modifiers) {
     for (AnnotationTree annotation : modifiers.getAnnotations()) {
-      if (annotation.getArguments().isEmpty()) {
-        markerAnnotations++;
+      if (!annotation.getArguments().isEmpty() || !NULL_ANNOTATIONS.matcher(annotation.getAnnotationType().toString()).matches()) {
+        return false;
       }
     }
-    return markerAnnotations <= 1 && markerAnnotations == modifiers.getAnnotations().size()
-        ? Direction.HORIZONTAL
-        : Direction.VERTICAL;
+    return true;
   }
 
   /**
@@ -3566,12 +3585,15 @@ public final class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
    * currently true if all annotations are marker annotations.
    */
   private Direction fieldAnnotationDirection(ModifiersTree modifiers) {
-    for (AnnotationTree annotation : modifiers.getAnnotations()) {
-      if (!annotation.getArguments().isEmpty()) {
-        return Direction.VERTICAL;
-      }
+    if (!options.nullAnnotations()) {
+      for (AnnotationTree annotation : modifiers.getAnnotations())
+        if (!annotation.getArguments().isEmpty()) {
+          return Direction.VERTICAL;
+        }
+      return Direction.HORIZONTAL;
+    } else {
+      return hasOnlyNullRelatedAnnotations(modifiers) ? Direction.HORIZONTAL : Direction.VERTICAL;
     }
-    return Direction.HORIZONTAL;
   }
 
   /**

@@ -55,6 +55,8 @@ def main():
                       help='be more verbose, ineffective without -i')
   parser.add_argument('-a', '--aosp', action='store_true',
                       help='use AOSP style instead of Google Style (4-space indentation)')
+  parser.add_argument('-A', '--ataccama', action='store_true',
+                      help='use Ataccama style instead of Google Style (4-space indentation)')
   parser.add_argument('--skip-sorting-imports', action='store_true',
                       help='do not fix the import order')
   parser.add_argument('-b', '--binary', help='path to google-java-format binary')
@@ -110,6 +112,8 @@ def main():
       command.append('-i')
     if args.aosp:
       command.append('--aosp')
+    if args.ataccama:
+      command.append('--ataccama')
     if args.skip_sorting_imports:
       command.append('--skip-sorting-imports')
     command.extend(lines)

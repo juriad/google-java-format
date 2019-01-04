@@ -14,7 +14,6 @@
 
 package com.google.googlejavaformat.java;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Range;
 import com.google.googlejavaformat.java.SnippetFormatter.SnippetKind;
 import java.util.ArrayList;
@@ -29,8 +28,7 @@ import org.eclipse.text.edits.TextEdit;
 
 /** Runs the Google Java formatter on the given code. */
 public class GoogleJavaFormatter extends CodeFormatter {
-
-  private static final int INDENTATION_SIZE = 2;
+  private final SnippetFormatter formatter = new SnippetFormatter();
 
   @Override
   public TextEdit format(
@@ -47,16 +45,7 @@ public class GoogleJavaFormatter extends CodeFormatter {
 
   @Override
   public String createIndentationString(int indentationLevel) {
-    Preconditions.checkArgument(
-        indentationLevel >= 0,
-        "Indentation level cannot be less than zero. Given: %s",
-        indentationLevel);
-    int spaces = indentationLevel * INDENTATION_SIZE;
-    StringBuilder buf = new StringBuilder(spaces);
-    for (int i = 0; i < spaces; i++) {
-      buf.append(' ');
-    }
-    return buf.toString();
+    return formatter.createIndentationString(indentationLevel);
   }
 
   /** Runs the Google Java formatter on the given source, with only the given ranges specified. */
@@ -83,9 +72,8 @@ public class GoogleJavaFormatter extends CodeFormatter {
           throw new IllegalArgumentException(String.format("Unknown snippet kind: %d", kind));
       }
       List<Replacement> replacements =
-          new SnippetFormatter()
-              .format(
-                  snippetKind, source, rangesFromRegions(regions), initialIndent, includeComments);
+          formatter.format(
+              snippetKind, source, rangesFromRegions(regions), initialIndent, includeComments);
       if (idempotent(source, regions, replacements)) {
         // Do not create edits if there's no diff.
         return null;

@@ -30,9 +30,11 @@ import java.util.regex.Pattern;
 public final class JavaCommentsHelper implements CommentsHelper {
 
   private final String lineSeparator;
+  private final JavaFormatterOptions options;
 
   public JavaCommentsHelper(String lineSeparator, JavaFormatterOptions options) {
     this.lineSeparator = lineSeparator;
+    this.options = options;
   }
 
   @Override
@@ -42,7 +44,7 @@ public final class JavaCommentsHelper implements CommentsHelper {
     }
     String text = tok.getOriginalText();
     if (tok.isJavadocComment()) {
-      text = JavadocFormatter.formatJavadoc(text, column0);
+      text = JavadocFormatter.formatJavadoc(text, column0, options);
     }
     List<String> lines = new ArrayList<>();
     Iterator<String> it = Newlines.lineIterator(text);
@@ -90,7 +92,9 @@ public final class JavaCommentsHelper implements CommentsHelper {
 
   // Wraps and re-indents line comments.
   private String indentLineComments(List<String> lines, int column0) {
-    lines = wrapLineComments(lines, column0);
+    if (options.wrapLineComments()) {
+      lines = wrapLineComments(lines, column0);
+    }
     StringBuilder builder = new StringBuilder();
     builder.append(lines.get(0).trim());
     String indentString = Strings.repeat(" ", column0);
@@ -119,8 +123,8 @@ public final class JavaCommentsHelper implements CommentsHelper {
         result.add(line);
         continue;
       }
-      while (line.length() + column0 > Formatter.MAX_LINE_LENGTH) {
-        int idx = Formatter.MAX_LINE_LENGTH - column0;
+      while (line.length() + column0 > options.maxLineLength()) {
+        int idx = options.maxLineLength() - column0;
         // only break on whitespace characters, and ignore the leading `// `
         while (idx >= 2 && !CharMatcher.whitespace().matches(line.charAt(idx))) {
           idx--;

@@ -50,6 +50,7 @@ public final class JavaOutput extends Output {
   private final CommentsHelper commentsHelper; // Used to re-flow comments.
   private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.
   private final RangeSet<Integer> partialFormatRanges = TreeRangeSet.create();
+  private final JavaFormatterOptions options;
 
   private final List<String> mutableLines = new ArrayList<>();
   private final int kN; // The number of tokens or comments in the input, excluding the EOF.
@@ -64,12 +65,16 @@ public final class JavaOutput extends Output {
    *
    * @param javaInput the {@link JavaInput}, used to match up blank lines in the output
    * @param commentsHelper the {@link CommentsHelper}, used to rewrite comments
+   * @param options
    */
-  public JavaOutput(String lineSeparator, JavaInput javaInput, CommentsHelper commentsHelper) {
+  public JavaOutput(
+          String lineSeparator, JavaInput javaInput, CommentsHelper commentsHelper, JavaFormatterOptions options
+  ) {
     this.lineSeparator = lineSeparator;
     this.javaInput = javaInput;
     this.commentsHelper = commentsHelper;
     kN = javaInput.getkN();
+    this.options = options;
   }
 
   @Override
@@ -92,7 +97,7 @@ public final class JavaOutput extends Output {
   @Override
   public void append(String text, Range<Integer> range) {
     if (!range.isEmpty()) {
-      boolean sawNewlines = false;
+      int sawNewlines = 0;
       // Skip over input line we've passed.
       int iN = javaInput.getLineCount();
       while (iLine < iN
@@ -100,7 +105,7 @@ public final class JavaOutput extends Output {
               || javaInput.getRanges(iLine).upperEndpoint() <= range.lowerEndpoint())) {
         if (javaInput.getRanges(iLine).isEmpty()) {
           // Skipped over a blank line.
-          sawNewlines = true;
+          sawNewlines++;
         }
         ++iLine;
       }
@@ -109,8 +114,8 @@ public final class JavaOutput extends Output {
        * there's a blank line here and it's a comment.
        */
       BlankLineWanted wanted = blankLines.getOrDefault(lastK, BlankLineWanted.NO);
-      if (isComment(text) ? sawNewlines : wanted.wanted().orElse(sawNewlines)) {
-        ++newlinesPending;
+      if (isComment(text) ? sawNewlines > 0 : wanted.wanted().orElse(sawNewlines > 0)) {
+        newlinesPending += Math.max(1, Math.min(options.maxPreserveBlanks(), sawNewlines));
       }
     }
     if (Newlines.isNewline(text)) {

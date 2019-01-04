@@ -40,7 +40,7 @@ final class InitialConfigurationComponent implements ProjectComponent {
   @Override
   public void projectOpened() {
     if (settings.isUninitialized()) {
-      settings.setEnabled(false);
+      settings.setEnabled(true);
       displayNewUserNotification();
     }
   }
@@ -50,11 +50,11 @@ final class InitialConfigurationComponent implements ProjectComponent {
         new Notification(
             NOTIFICATION_GROUP.getDisplayId(),
             NOTIFICATION_TITLE,
-            "The google-java-format plugin is disabled by default. "
-                + "<a href=\"enable\">Enable for this project</a>.",
+            "The google-java-format plugin is enabled by default. "
+                + "<a href=\"enable\">Disable for this project</a>.",
             NotificationType.INFORMATION,
             (n, e) -> {
-              settings.setEnabled(true);
+              settings.setEnabled(false);
               n.expire();
             });
     notification.notify(project);

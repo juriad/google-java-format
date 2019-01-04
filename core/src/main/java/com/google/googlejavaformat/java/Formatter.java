@@ -87,8 +87,6 @@ import org.openjdk.tools.javac.util.Options;
 @Immutable
 public final class Formatter {
 
-  public static final int MAX_LINE_LENGTH = 100;
-
   static final Range<Integer> EMPTY_RANGE = Range.closedOpen(-1, -1);
 
   private final JavaFormatterOptions options;
@@ -100,6 +98,10 @@ public final class Formatter {
 
   public Formatter(JavaFormatterOptions options) {
     this.options = options;
+  }
+
+  public JavaFormatterOptions getOptions() {
+    return options;
   }
 
   /**
@@ -154,11 +156,11 @@ public final class Formatter {
     }
     OpsBuilder builder = new OpsBuilder(javaInput, javaOutput);
     // Output the compilation unit.
-    new JavaInputAstVisitor(builder, options.indentationMultiplier()).scan(unit, null);
+    new JavaInputAstVisitor(builder, options).scan(unit, null);
     builder.sync(javaInput.getText().length());
     builder.drain();
     Doc doc = new DocBuilder().withOps(builder.build()).build();
-    doc.computeBreaks(javaOutput.getCommentsHelper(), MAX_LINE_LENGTH, new Doc.State(+0, 0));
+    doc.computeBreaks(javaOutput.getCommentsHelper(), options.maxLineLength(), new Doc.State(+0, 0));
     doc.write(javaOutput);
     javaOutput.flush();
   }
@@ -219,7 +221,7 @@ public final class Formatter {
     input = ImportOrderer.reorderImports(input, options.style());
     input = RemoveUnusedImports.removeUnusedImports(input);
     String formatted = formatSource(input);
-    formatted = StringWrapper.wrap(formatted);
+    formatted = StringWrapper.wrap(formatted, options);
     return formatted;
   }
 
@@ -256,7 +258,7 @@ public final class Formatter {
 
     String lineSeparator = Newlines.guessLineSeparator(input);
     JavaOutput javaOutput =
-        new JavaOutput(lineSeparator, javaInput, new JavaCommentsHelper(lineSeparator, options));
+        new JavaOutput(lineSeparator, javaInput, new JavaCommentsHelper(lineSeparator, options), options);
     try {
       format(javaInput, javaOutput, options);
     } catch (FormattingError e) {

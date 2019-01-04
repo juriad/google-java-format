@@ -14,6 +14,7 @@
 package com.google.googlejavaformat.java;
 
 import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.primitives.Booleans.falseFirst;
 import static com.google.common.primitives.Booleans.trueFirst;
 
 import com.google.common.base.CharMatcher;
@@ -140,6 +141,15 @@ public class ImportOrderer {
           .thenComparing(Import::imported);
 
   /**
+   * A {@link Comparator} that orders {@link Import}s by Ataccama Style
+   */
+  private static final Comparator<Import> ATACCAMA_IMPORT_COMPARATOR =
+          Comparator.comparing(Import::isStatic, falseFirst())
+                  .thenComparing(Import::isJava, trueFirst())
+                  .thenComparing(Import::isAtaccama, falseFirst())
+                  .thenComparing(Import::imported);
+
+  /**
    * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
    * Import}s based on Google style.
    */
@@ -162,6 +172,25 @@ public class ImportOrderer {
     return !prev.topLevel().equals(curr.topLevel());
   }
 
+  /**
+   * Determines whether to insert a blank line between the {@code prev} and {@code curr} {@link
+   * Import}s based on Ataccama style.
+   */
+  private static boolean shouldInsertBlankLineAtaccama(Import prev, Import curr) {
+    if (prev.isStatic() && !curr.isStatic()) {
+      return true;
+    }
+    if (prev.isStatic && curr.isStatic) {
+      return false;
+    }
+
+    // insert blank line between "com.anythingelse" from "com.ataccama"
+    if (!prev.isAtaccama() && curr.isAtaccama()) {
+      return true;
+    }
+    return false;
+  }
+
   private final String text;
   private final ImmutableList<Tok> toks;
   private final String lineSeparator;
@@ -178,6 +207,9 @@ public class ImportOrderer {
     } else if (style.equals(Style.AOSP)) {
       this.importComparator = AOSP_IMPORT_COMPARATOR;
       this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineAosp;
+    } else if (style.equals(Style.ATACCAMA)) {
+      this.importComparator = ATACCAMA_IMPORT_COMPARATOR;
+      this.shouldInsertBlankLineFn = ImportOrderer::shouldInsertBlankLineAtaccama;
     } else {
       throw new IllegalArgumentException("Unsupported code style: " + style);
     }
@@ -214,6 +246,12 @@ public class ImportOrderer {
     boolean isAndroid() {
       return Stream.of("android.", "androidx.", "dalvik.", "libcore.", "com.android.")
           .anyMatch(imported::startsWith);
+    }
+
+    /** True if this is an Ataccama import per Ataccama style. */
+    boolean isAtaccama() {
+      return Stream.of("com.ataccama.")
+              .anyMatch(imported::startsWith);
     }
 
     /** True if this is a Java import per AOSP style. */

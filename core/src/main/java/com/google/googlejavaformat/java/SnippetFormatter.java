@@ -56,7 +56,6 @@ public class SnippetFormatter {
     }
   }
 
-  private static final int INDENTATION_SIZE = 2;
   private final Formatter formatter = new Formatter();
   private static final CharMatcher NOT_WHITESPACE = CharMatcher.whitespace().negate();
 
@@ -65,7 +64,7 @@ public class SnippetFormatter {
         indentationLevel >= 0,
         "Indentation level cannot be less than zero. Given: %s",
         indentationLevel);
-    int spaces = indentationLevel * INDENTATION_SIZE;
+    int spaces = indentationLevel * formatter.getOptions().indentationMultiplier() * 2;
     StringBuilder buf = new StringBuilder(spaces);
     for (int i = 0; i < spaces; i++) {
       buf.append(' ');

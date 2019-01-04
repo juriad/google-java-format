@@ -126,8 +126,7 @@ class GoogleJavaFormatCodeStyleManager extends CodeStyleManagerDecorator {
    * formatter (usually using {@link #performReplacements(Document, Map)}.
    */
   private void format(Document document, Collection<TextRange> ranges) {
-    Style style = GoogleJavaFormatSettings.getInstance(getProject()).getStyle();
-    Formatter formatter = new Formatter(JavaFormatterOptions.builder().style(style).build());
+    Formatter formatter = new Formatter(JavaFormatterOptions.builder().build());
     performReplacements(
         document, FormatterUtil.getReplacements(formatter, document.getText(), ranges));
   }

@@ -62,14 +62,6 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
     return state.enabled.equals(EnabledState.UNKNOWN);
   }
 
-  JavaFormatterOptions.Style getStyle() {
-    return state.style;
-  }
-
-  void setStyle(JavaFormatterOptions.Style style) {
-    state.style = style;
-  }
-
   enum EnabledState {
     UNKNOWN,
     ENABLED,
@@ -79,7 +71,6 @@ class GoogleJavaFormatSettings implements PersistentStateComponent<GoogleJavaFor
   static class State {
 
     private EnabledState enabled = EnabledState.UNKNOWN;
-    public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.GOOGLE;
 
     // enabled used to be a boolean so we use bean property methods for backwards compatibility
     public void setEnabled(@Nullable String enabledStr) {
